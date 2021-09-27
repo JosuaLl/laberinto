@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Laberintos</title>
+		<div style="black">
+		</div>
+		<script language="JavaScript">
+			var ARRIBA = 0;
+			var DERECHA = 1;
+			var IZQUIERDA = 2;
+			var ABAJO = 3;
+			var X = 20;
+			var Y = 20;
+
+			var n = 0;
+			var p = new Array(X * Y);
+			var c = new Array((X * 2 + 1) * (Y * 2 + 1));
+
+			function generar() {
+				for(y = 0; y < Y; y++) {
+					for(x = 0; x < X; x++) {
+						setPared(x, y, ARRIBA, true);
+						setPared(x, y, DERECHA, true);
+						setPared(x, y, IZQUIERDA, true);
+						setPared(x, y, ABAJO, true);
+						setVisitado(x, y, false);
+					}
+				}
+				x = X-1;
+				y = Math.floor(Math.random() * Y);
+				setPared(x, y, DERECHA, false);
+				x = 0;
+				y = Math.floor(Math.random() * Y);
+				setVisitado(x, y, true);
+				setPared(x, y, IZQUIERDA, false);
+				visitarEspecifico(x, y);
+				visitar();
+				x = X;
+				y = Math.floor(Math.random() * Y);
+			}
+
+			function visitar() {
+				if(n-- >= 0) {
+					imprimir();
+					var x = p[n] % X;
+					var y = Math.floor(p[n] / X);
+					p[n] = undefined;
+					visitarEspecifico(x, y);
+					setTimeout("visitar()", 0);
+				}
+			}
+
+			function valido(x, y) {
+				return x > -1 && x < X && y > -1 && y < Y;
+			}
+
+			function visitarEspecifico(x, y) {
+				var cuantos = 0;
+
+				if(valido(x, y - 1)) cuantos += getVisitado(x, y - 1) ? 0 : 1;
+				if(valido(x + 1, y)) cuantos += getVisitado(x + 1, y) ? 0 : 1;
+				if(valido(x - 1, y)) cuantos += getVisitado(x - 1, y) ? 0 : 1;
+				if(valido(x, y + 1)) cuantos += getVisitado(x, y + 1) ? 0 : 1;
+
+				if(cuantos == 0) {
+					mezclar();
+					return;
+				}
+				if(cuantos >= 2) p[n++] = x + y * X;
+
+				var seguir = true;
+				while(seguir) {
+					var cual = Math.floor(Math.random() * 4);
+					switch(cual) {
+						case ARRIBA:	seguir = agregar(x, y - 1, ABAJO);		break;
+						case DERECHA:	seguir = agregar(x + 1, y, IZQUIERDA);	break;
+						case IZQUIERDA:	seguir = agregar(x - 1, y, DERECHA);	break;
+						case ABAJO:		seguir = agregar(x, y + 1, ARRIBA);		break;
+					}
+				}
+			}
+
+			function agregar(x, y, pared) {
+				if(valido(x, y) && !getVisitado(x, y)) {
+					setVisitado(x, y, true);
+					p[n++] = x + y * X;
+					setPared(x, y, pared, false);
+					return false;
+				} else {
+					return true;
+				}
+			}
+
+			function imprimir() {
+				var s = "";
+				s += ("<table cellspacing=\"0\">");
+				for(y = 0; y < Y; y++) {
+					s += ("<tr>");
+					for(x = 0; x < X; x++) {
+						s += ("<td style=\""+
+							"border-top:solid " + (getPared(x, y, ARRIBA) ? 2 : 0) + "px;" +
+							"border-right:solid " + (getPared(x, y, DERECHA) ? 2 : 0) + "px;" +
+							"border-left:solid " + (getPared(x, y, IZQUIERDA) ? 2 : 0) + "px;" +
+							"border-bottom:solid " + (getPared(x, y, ABAJO) ? 2 : 0) + "px;" +
+							(getVisitado(x, y) ? "" : "background-color:gray;") +
+							"\">&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+					}
+					s += ("</tr>");
+				}
+				s += ("</table>");
+				//for(a = 0; a < n; a++) {
+				//	s += ("p[" + a + "] = " + (p[a] + 1) + "<br>");
+				//}
+				document.getElementById("laberinto").innerHTML = s;
+			}
+
+			function getPared(x, y, cual) {
+				switch(cual) {
+					case ARRIBA:
+						return getPos(x * 2 + 1, y * 2);
+						break;
+					case DERECHA:
+						return getPos(x * 2 + 2, y * 2 + 1);
+						break;
+					case IZQUIERDA:
+						return getPos(x * 2, y * 2 + 1);
+						break;
+					case ABAJO:
+						return getPos(x * 2 + 1, y * 2 + 2);
+						break;
+				}
+			}
+
+			function setPared(x, y, cual, valor) {
+				switch(cual) {
+					case ARRIBA:
+						setPos(x * 2 + 1, y * 2, valor, 0);
+						break;
+					case DERECHA:
+						setPos(x * 2 + 2, y * 2 + 1, valor, 0);
+						break;
+					case IZQUIERDA:
+						setPos(x * 2, y * 2 + 1, valor, 0);
+						break;
+					case ABAJO:
+						setPos(x * 2 + 1, y * 2 + 2, valor, 0);
+						break;
+				}
+			}
+
+			function getVisitado(x, y) {
+				return getPos(x * 2 + 1, y * 2 + 1);
+			}
+
+			function setVisitado(x, y, valor) {
+				setPos(x * 2 + 1, y * 2 + 1, valor);
+			}
+
+			function getPos(x, y) {
+				return c[y * (X * 2 + 1) + x];
+			}
+
+			function setPos(x, y, valor) {
+				c[y * (X * 2 + 1) + x] = valor;
+			}
+
+			function mezclar() {
+				p.sort();
+				var m = 0;
+				var j = -1;
+				for(a = 0; a < n; a++) {
+					if(j != p[a]) {
+						j = p[m++] = p[a];
+					}
+				}
+				n = m;
+				for(a = 0; a < n; a++) {
+					var i = Math.floor(Math.random() * n);
+					var t = p[i];
+					p[i] = p[a];
+					p[a] = t;
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+		<div id="laberinto"></div>
+		<script language="JavaScript">
+			generar();
+			imprimir();
+		</script>
+	</body>
+</html>
